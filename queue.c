@@ -18,7 +18,7 @@ struct list_head *q_new()
     if (!head)
         return NULL;
     INIT_LIST_HEAD(
-        head);  // Assuming list.h provides this macro for initialization
+        head);  
     return head;
 }
 
@@ -54,7 +54,7 @@ bool q_insert_head(struct list_head *head, char *s)
         return false;
     }
     list_add(&new_element->list,
-             head);  // Assuming list.h provides this function
+             head);  
     return true;
 }
 
@@ -73,7 +73,7 @@ bool q_insert_tail(struct list_head *head, char *s)
         return false;
     }
     list_add_tail(&new_element->list,
-                  head);  // Assuming list.h provides this function
+                  head);  
     return true;
 }
 
