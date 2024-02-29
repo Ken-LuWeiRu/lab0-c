@@ -122,17 +122,66 @@ int q_size(struct list_head *head)
 }
 
 /* Delete the middle node in queue */
+// https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/
 bool q_delete_mid(struct list_head *head)
 {
-    // https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/
-    return true;
+    if (head == NULL || head->next == NULL) {
+        free(head);  
+        return NULL;
+    }
+
+    struct ListNode *slow = head, *fast = head;
+    struct ListNode *prev = NULL; 
+
+    while (fast != NULL && fast->next != NULL) {
+        prev = slow;  
+        slow = slow->next;  
+        fast = fast->next->next;  
+    }
+
+
+    if (prev != NULL) {
+        prev->next = slow->next; 
+        free(slow); 
+    }
+
+    return head;  
+
 }
 
 /* Delete all nodes that have duplicate string */
+    // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
 bool q_delete_dup(struct list_head *head)
 {
-    // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
-    return true;
+    if (head == NULL || head->next == NULL) {
+        return head;  
+    }
+    
+    struct ListNode* dummy = (struct ListNode*)malloc(sizeof(struct ListNode));
+    dummy->val = 0; 
+    dummy->next = head;
+    
+    struct ListNode *prev = dummy; 
+    
+    while (head != NULL) {
+        if (head->next != NULL && head->val == head->next->val) {
+            while (head->next != NULL && head->val == head->next->val) {
+                struct ListNode *temp = head;  
+                head = head->next;  
+                free(temp);  
+            }
+            prev->next = head->next;  
+        } else {
+            prev = prev->next;  
+        }
+        if (head != NULL) {  
+            head = head->next; 
+        }
+    }
+    
+    struct ListNode *newHead = dummy->next; 
+    free(dummy); 
+    return newHead; 
 }
 
 /* Swap every two adjacent nodes */
