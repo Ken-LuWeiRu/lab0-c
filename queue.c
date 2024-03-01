@@ -265,7 +265,6 @@ void q_reverseK(struct list_head *head, int k)
 }
 
 /* Sort elements of queue in ascending/descending order */
-// pass check at
 void q_sort(struct list_head *head, bool descend)
 {
     if (!head || list_empty(head) || list_is_singular(head)) {
@@ -367,8 +366,38 @@ int q_descend(struct list_head *head)
 
 /* Merge all the queues into one sorted queue, which is in ascending/descending
  * order */
+// https://leetcode.com/problems/merge-k-sorted-lists/
 int q_merge(struct list_head *head, bool descend)
 {
-    // https://leetcode.com/problems/merge-k-sorted-lists/
+    // Check if the list is valid and not empty
+    if (!head || list_empty(head) || list_is_singular(head))
+        return 0;
+
+    struct list_head *i, *j;
+    bool swapped;
+
+    // Bubble sort algorithm applied directly on the list
+    do {
+        swapped = false;
+        list_for_each (i, head) {
+            if (i->next == head)
+                break;  // Reach the end of the list
+
+            j = i->next;
+            element_t *i_element = list_entry(i, element_t, list);
+            element_t *j_element = list_entry(j, element_t, list);
+
+            // Compare and swap if needed
+            if ((descend && strcmp(i_element->value, j_element->value) < 0) ||
+                (!descend && strcmp(i_element->value, j_element->value) > 0)) {
+                // Swapping values instead of list nodes
+                char *temp = i_element->value;
+                i_element->value = j_element->value;
+                j_element->value = temp;
+
+                swapped = true;
+            }
+        }
+    } while (swapped);
     return 0;
 }
