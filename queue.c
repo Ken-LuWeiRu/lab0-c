@@ -212,14 +212,13 @@ void q_reverse(struct list_head *head)
         return;
     }
 
-    struct list_head *current = head->next, *temp;
+    // struct list_head *current = head->next, *temp;
+    struct list_head *current, *temp;
     struct list_head new_head;
     INIT_LIST_HEAD(&new_head);
 
-    while (current != head) {
-        temp = current->next;
+    list_for_each_safe (current, temp, head) {
         list_move(current, &new_head);
-        current = temp;
     }
 
     head->next = new_head.next;
@@ -229,19 +228,89 @@ void q_reverse(struct list_head *head)
 }
 
 /* Reverse the nodes of the list k at a time */
+// https://leetcode.com/problems/reverse-nodes-in-k-group/
 void q_reverseK(struct list_head *head, int k)
 {
-    // https://leetcode.com/problems/reverse-nodes-in-k-group/
+    if (!head || list_empty(head) || list_is_singular(head)) {
+        return;
+    }
+
+    struct list_head *current = head->next;
+    struct list_head *start = current;
+    int count = 0;
+
+    while (current != head && count < k) {
+        current = current->next;
+        count++;
+    }
+
+    if (count == k) {
+        struct list_head *prev = head, *next = NULL;
+        current = start;
+
+        for (int i = 0; i < k; i++) {
+            next = current->next;
+            list_del_init(current);
+            list_add(current, prev->next);
+            prev = current;
+            current = next;
+        }
+    }
 }
 
 /* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend) {}
+void q_sort(struct list_head *head, bool descend)
+{
+    if (!head || list_empty(head) || list_is_singular(head)) {
+        return;
+    }
+
+    struct list_head *i, *next_i;
+    bool swapped;
+
+    do {
+        swapped = false;
+
+        for (i = head->next; i != head->prev; i = i->next) {
+            next_i = i->next;
+
+            element_t *i_entry = list_entry(i, element_t, list);
+            element_t *next_i_entry = list_entry(next_i, element_t, list);
+
+            if ((descend && strcmp(i_entry->value, next_i_entry->value) < 0) ||
+                (!descend && strcmp(i_entry->value, next_i_entry->value) > 0)) {
+                char *temp_value = i_entry->value;
+                i_entry->value = next_i_entry->value;
+                next_i_entry->value = temp_value;
+
+                swapped = true;
+            }
+        }
+    } while (swapped);
+}
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
+// https://leetcode.com/problems/remove-nodes-from-linked-list/
+// LeetCode 2487. Remove Nodes From Linked List
 int q_ascend(struct list_head *head)
 {
-    // https://leetcode.com/problems/remove-nodes-from-linked-list/
+    struct list_head *temp, *safe;
+
+    if (!head || list_empty(head))
+        return 0;
+
+    list_for_each_safe (temp, safe, head) {
+        element_t *current_element = list_entry(temp, element_t, list);
+        if (temp->next != head) {
+            element_t *next_element = list_entry(temp->next, element_t, list);
+            if (current_element->value < next_element->value) {
+                list_del(temp);
+                free(current_element->value);
+                free(current_element);
+            }
+        }
+    }
     return 0;
 }
 
