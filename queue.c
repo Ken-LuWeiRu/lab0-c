@@ -41,20 +41,25 @@ void q_free(struct list_head *head)
 /* Insert an element at head of queue */
 bool q_insert_head(struct list_head *head, char *s)
 {
-    if (!head || !s)
+    if (!head || !s) {
         return false;
-    element_t *new_element = malloc(sizeof(element_t));
-    if (!new_element)
+    }
+
+    element_t *new_element = (element_t *) malloc(sizeof(element_t));
+    if (new_element == NULL) {
         return false;
-    new_element->value =
-        strdup(s);  // strdup allocates memory and copies the string into it
-    if (!new_element->value) {
+    }
+
+    new_element->value = strdup(s);
+    if (new_element->value == NULL) {
         free(new_element);
         return false;
     }
+
     list_add(&new_element->list, head);
     return true;
 }
+
 
 
 /* Insert an element at tail of queue */
@@ -206,6 +211,7 @@ void q_swap(struct list_head *head)
 }
 
 /* Reverse elements in queue */
+// pass
 void q_reverse(struct list_head *head)
 {
     if (!head || list_empty(head) || list_is_singular(head)) {
@@ -259,6 +265,7 @@ void q_reverseK(struct list_head *head, int k)
 }
 
 /* Sort elements of queue in ascending/descending order */
+// pass check at
 void q_sort(struct list_head *head, bool descend)
 {
     if (!head || list_empty(head) || list_is_singular(head)) {
