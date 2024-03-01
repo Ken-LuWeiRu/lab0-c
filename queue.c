@@ -229,18 +229,44 @@ int q_ascend(struct list_head *head)
 
 /* Remove every node which has a node with a strictly greater value anywhere to
  * the right side of it */
-int q_descend(struct list_head *head)
-{
-    if (!head) return NULL;
+int q_descend(struct list_head *head) {
+    if (!head || list_empty(head)) return 0;
 
-    head->next = removeNodes(head->next); 
-    if (head->next && head->val < head->next->val) {
-        struct ListNode* temp = head->next;
-        free(head); 
-        return temp;
+    struct list_head *current = head, *temp;
+    int removed = 0; 
+
+    struct list_head new_head;
+    INIT_LIST_HEAD(&new_head);
+
+    char *max_value = NULL;
+    element_t *current_entry;
+
+    while (current->next != head) {
+        current = current->next; 
+        current_entry = list_entry(current, element_t, list);
+
+
+        if (!max_value || strcmp(current_entry->value, max_value) >= 0) {
+            max_value = current_entry->value;
+            list_move_tail(current, &new_head); 
+        } else {
+            temp = current->prev; 
+            list_del(current); 
+            free(current_entry->value);
+            free(current_entry); 
+            current = temp; 
+            removed++;
+        }
     }
 
-    return head;
+    if (!list_empty(&new_head)) {
+        head->next = new_head.next;
+        new_head.next->prev = head;
+        head->prev = new_head.prev;
+        new_head.prev->next = head;
+    }
+
+    return removed; 
 }
 
 /* Merge all the queues into one sorted queue, which is in ascending/descending
