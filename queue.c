@@ -218,20 +218,27 @@ void q_reverse(struct list_head *head)
         return;
     }
 
-    // struct list_head *current = head->next, *temp;
-    struct list_head *current, *temp;
-    struct list_head new_head;
-    INIT_LIST_HEAD(&new_head);
+    struct list_head *current = head->next;
+    struct list_head *temp = NULL;
+    struct list_head *prev = head;
 
-    list_for_each_safe (current, temp, head) {
-        list_move(current, &new_head);
+    while (current != head) {
+        temp = current->next;  // Save next node
+        current->next = prev;  // Reverse current node's pointer
+        prev = current;        // Move prev up for next iteration
+        current = temp;        // Move to next node in original list
     }
+    head->next = prev;  // Adjust head to new first element
 
-    head->next = new_head.next;
-    new_head.next->prev = head;
-    head->prev = new_head.prev;
-    new_head.prev->next = head;
+    // Fix the previous links for each node
+    current = head;
+    do {
+        temp = current->next;  // Move to next node
+        temp->prev = current;  // Set the previous link
+        current = temp;        // Move forward in the list
+    } while (current != head);
 }
+
 
 /* Reverse the nodes of the list k at a time */
 // https://leetcode.com/problems/reverse-nodes-in-k-group/
@@ -271,29 +278,71 @@ void q_sort(struct list_head *head, bool descend)
         return;
     }
 
-    struct list_head *i, *next_i;
-    bool swapped;
+    struct list_head *sorted =
+        NULL;  // This will be the start of the new sorted list
+    struct list_head *current = head->next;  // Start from the first element
 
-    do {
-        swapped = false;
+    while (current != head) {
+        struct list_head *next = current->next;  // Store next for later
 
-        for (i = head->next; i != head->prev; i = i->next) {
-            next_i = i->next;
+        // Remove 'current' from the list
+        current->prev->next = current->next;
+        current->next->prev = current->prev;
 
-            element_t *i_entry = list_entry(i, element_t, list);
-            element_t *next_i_entry = list_entry(next_i, element_t, list);
-
-            if ((descend && strcmp(i_entry->value, next_i_entry->value) < 0) ||
-                (!descend && strcmp(i_entry->value, next_i_entry->value) > 0)) {
-                char *temp_value = i_entry->value;
-                i_entry->value = next_i_entry->value;
-                next_i_entry->value = temp_value;
-
-                swapped = true;
+        // Find the location to insert the current node in the sorted part
+        if (sorted == NULL ||
+            (descend
+                 ? strcmp(list_entry(sorted, element_t, list)->value,
+                          list_entry(current, element_t, list)->value) < 0
+                 : strcmp(list_entry(sorted, element_t, list)->value,
+                          list_entry(current, element_t, list)->value) > 0)) {
+            // Insert at the beginning
+            current->next = sorted;
+            if (sorted != NULL) {
+                sorted->prev = current;
             }
+            sorted = current;
+            sorted->prev = NULL;  // Current node is now the first node
+        } else {
+            struct list_head *tmp = sorted;
+            while (
+                tmp->next != NULL &&
+                (descend
+                     ? strcmp(list_entry(tmp->next, element_t, list)->value,
+                              list_entry(current, element_t, list)->value) > 0
+                     : strcmp(list_entry(tmp->next, element_t, list)->value,
+                              list_entry(current, element_t, list)->value) <
+                           0)) {
+                tmp = tmp->next;  // Move to next node
+            }
+
+            // Insert 'current' after 'tmp'
+            current->next = tmp->next;
+            if (tmp->next != NULL) {
+                tmp->next->prev = current;
+            }
+            tmp->next = current;
+            current->prev = tmp;
         }
-    } while (swapped);
+
+        current = next;  // Move to the next node
+    }
+
+    // Reconnect the sorted list back to head
+    if (sorted != NULL) {
+        head->next = sorted;
+        sorted->prev = head;
+
+        // Find the last element and connect it back to head
+        while (sorted->next != NULL) {
+            sorted = sorted->next;
+        }
+        sorted->next = head;
+        head->prev = sorted;
+    }
 }
+
+
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
