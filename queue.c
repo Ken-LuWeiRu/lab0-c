@@ -125,69 +125,78 @@ int q_size(struct list_head *head)
 // https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/
 bool q_delete_mid(struct list_head *head)
 {
-    if (head == NULL || head->next == NULL) {
-        free(head);  
-        return NULL;
+    if (!head || list_empty(head) || list_is_singular(head))
+        return false;  
+
+    struct list_head *slow = head->next, *fast = head->next;
+    struct list_head *prev = NULL;
+
+    while (fast != head && fast->next != head) {
+        prev = slow;
+        slow = slow->next;
+        fast = fast->next->next;
     }
 
-    struct ListNode *slow = head, *fast = head;
-    struct ListNode *prev = NULL; 
-
-    while (fast != NULL && fast->next != NULL) {
-        prev = slow;  
-        slow = slow->next;  
-        fast = fast->next->next;  
+    if (prev != NULL) {  
+        element_t *middle_element = list_entry(slow, element_t, list);
+        list_del(slow); 
+        free(middle_element->value);  
+        free(middle_element); 
+        return true;  
     }
-
-
-    if (prev != NULL) {
-        prev->next = slow->next; 
-        free(slow); 
-    }
-
-    return head;  
-
+    return false; 
 }
 
 /* Delete all nodes that have duplicate string */
     // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
 bool q_delete_dup(struct list_head *head)
 {
-    if (head == NULL || head->next == NULL) {
-        return head;  
+    if (!head || list_empty(head) || list_is_singular(head)) {
+        return;  
     }
-    
-    struct ListNode* dummy = (struct ListNode*)malloc(sizeof(struct ListNode));
-    dummy->val = 0; 
-    dummy->next = head;
-    
-    struct ListNode *prev = dummy; 
-    
-    while (head != NULL) {
-        if (head->next != NULL && head->val == head->next->val) {
-            while (head->next != NULL && head->val == head->next->val) {
-                struct ListNode *temp = head;  
-                head = head->next;  
-                free(temp);  
-            }
-            prev->next = head->next;  
+
+    struct list_head *current = head->next, *temp;  
+    while (current != head && current->next != head) { 
+        element_t *current_entry = list_entry(current, element_t, list);
+        element_t *next_entry = list_entry(current->next, element_t, list);
+
+        if (strcmp(current_entry->value, next_entry->value) == 0) {  
+            temp = current->next; 
+            list_del(current->next);  
+            free(next_entry->value); 
+            free(next_entry);  
+            current = temp;
         } else {
-            prev = prev->next;  
-        }
-        if (head != NULL) {  
-            head = head->next; 
+            current = current->next;  
         }
     }
-    
-    struct ListNode *newHead = dummy->next; 
-    free(dummy); 
-    return newHead; 
 }
 
 /* Swap every two adjacent nodes */
+// https://leetcode.com/problems/swap-nodes-in-pairs/
 void q_swap(struct list_head *head)
 {
-    // https://leetcode.com/problems/swap-nodes-in-pairs/
+    struct ListNode* dummy = (struct ListNode*)malloc(sizeof(struct ListNode));
+    dummy->val = 0;  
+    dummy->next = head;
+    
+    struct ListNode *prev = dummy, *cur = head;
+
+    while (cur != NULL && cur->next != NULL) {
+        struct ListNode *nextPair = cur->next->next;
+        struct ListNode *second = cur->next;
+
+        second->next = cur;
+        cur->next = nextPair;
+        prev->next = second;
+
+        prev = cur;
+        cur = nextPair;
+    }
+
+    struct ListNode *newHead = dummy->next; 
+    free(dummy); 
+    return newHead; 
 }
 
 /* Reverse elements in queue */
@@ -214,8 +223,16 @@ int q_ascend(struct list_head *head)
  * the right side of it */
 int q_descend(struct list_head *head)
 {
-    // https://leetcode.com/problems/remove-nodes-from-linked-list/
-    return 0;
+    if (!head) return NULL;
+
+    head->next = removeNodes(head->next); 
+    if (head->next && head->val < head->next->val) {
+        struct ListNode* temp = head->next;
+        free(head); 
+        return temp;
+    }
+
+    return head;
 }
 
 /* Merge all the queues into one sorted queue, which is in ascending/descending
