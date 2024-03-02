@@ -413,40 +413,61 @@ int q_descend(struct list_head *head)
     return removed;
 }
 
+
+/* Merge two sorted queues */
+// step 1: merge two queues into one queue
+// step 2: sort the merged queue
+// do not using malloc!
+void q_merge_two(struct list_head *head, struct list_head *head2, bool descend)
+{
+    if (!head || !head2) {
+        return;  // Error case
+    }
+
+    list_splice_tail(head2, head);  // Merge the two queues
+    INIT_LIST_HEAD(head2);
+}
+
+
 /* Merge all the queues into one sorted queue, which is in ascending/descending
  * order */
 // https://leetcode.com/problems/merge-k-sorted-lists/
+// Function to merge all queues into one.
+// step 1: merge all the queues into one queue, by function in lish.h
+// step 2: sort the merged queue
+// do not using malloc!
+/* Merge all the queues into one sorted queue, which is in ascending/descending
+ * order */
 int q_merge(struct list_head *head, bool descend)
 {
-    // Check if the list is valid and not empty
-    if (!head || list_empty(head) || list_is_singular(head))
-        return 0;
+    if (!head || list_empty(head) || list_is_singular(head)) {
+        return 0;  // Error case
+    }
 
-    struct list_head *i, *j;
-    bool swapped;
+    // Initialize a temporary pointer for safe iteration
+    queue_contex_t *container, *temp_container;
 
-    // Bubble sort algorithm applied directly on the list
-    do {
-        swapped = false;
-        list_for_each (i, head) {
-            if (i->next == head)
-                break;  // Reach the end of the list
+    // We'll use the first queue as the base for merging.
+    struct list_head *merged_queue =
+        list_first_entry(head, queue_contex_t, chain)->q;
 
-            j = i->next;
-            element_t *i_element = list_entry(i, element_t, list);
-            element_t *j_element = list_entry(j, element_t, list);
-
-            // Compare and swap if needed
-            if ((descend && strcmp(i_element->value, j_element->value) < 0) ||
-                (!descend && strcmp(i_element->value, j_element->value) > 0)) {
-                // Swapping values instead of list nodes
-                char *temp = i_element->value;
-                i_element->value = j_element->value;
-                j_element->value = temp;
-
-                swapped = true;
-            }
+    // Iterate through all the queues linked from 'head', starting from the
+    // second one.
+    list_for_each_entry_safe (container, temp_container, head, chain) {
+        // Skip the first queue as it's used as the base for merging.
+        if (container->q != merged_queue) {
+            q_merge_two(merged_queue, container->q, descend);
+            // After merge, the container's queue is no longer needed, clear it
+            // to avoid double freeing.
+            INIT_LIST_HEAD(container->q);
         }
-    } while (swapped);
-    return 0;
+    }
+
+    // Now all queues have been merged into 'merged_queue'.
+    // Sort the merged queue.
+    q_sort(merged_queue, descend);
+
+    // Return the size of the merged queue. Assuming q_size is correctly
+    // implemented.
+    return q_size(merged_queue);
 }
