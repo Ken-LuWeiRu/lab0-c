@@ -151,58 +151,38 @@ bool q_delete_mid(struct list_head *head)
 
 /* Delete all nodes that have duplicate string */
 // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
-/* Delete all nodes that have duplicate string */
 bool q_delete_dup(struct list_head *head)
 {
-    if (!head || list_empty(head)) {
-        return false;  // Return false if the list is NULL or empty
+    if (!head || list_empty(head) || head->next == head) {
+        return false;
     }
 
-    // Step 1: Create a new head containing NULL
-    struct list_head new_head;
-    INIT_LIST_HEAD(&new_head);
+    bool flag = false;
+    struct list_head *current = head->next, *temp;
+    element_t *first_element = list_entry(current, element_t, list);
 
-    // Link the original queue to the new head
-    list_splice_init(head, &new_head);
+    while (current->next != head) {
+        element_t *current_element = list_entry(current->next, element_t, list);
 
-    // Step 2: Use tmp to remember the content of head->next
-    struct list_head *tmp = new_head.next;
 
-    // Step 3: Iterate over the entire queue to remove duplicates
-    while (tmp != &new_head && tmp->next != &new_head) {
-        struct list_head *current = tmp->next;
-        bool duplicate_found = false;
-
-        // Check if there are any duplicates of the current element
-        while (current->next != &new_head) {
-            element_t *entry1 = list_entry(tmp, element_t, list);
-            element_t *entry2 = list_entry(current->next, element_t, list);
-
-            if (strcmp(entry1->value, entry2->value) == 0) {
-                // Duplicate found, remove the duplicate node
-                struct list_head *temp = current->next;
-                list_del(current->next);
-                free(list_entry(temp, element_t, list)->value);
-                free(list_entry(temp, element_t, list));
-                duplicate_found = true;
-            } else {
-                current = current->next;
-            }
-        }
-
-        // If a duplicate was found, remove the original node as well
-        if (duplicate_found) {
-            struct list_head *temp = tmp->next;
-            list_del(tmp->next);
-            free(list_entry(temp, element_t, list)->value);
-            free(list_entry(temp, element_t, list));
+        if (strcmp(first_element->value, current_element->value) == 0) {
+            temp = current->next;
+            list_del(current);
+            current = temp;
+            flag = true;
         } else {
-            tmp = tmp->next;
+            current = current->next;
         }
+    }
+
+    if (flag) {
+        list_del(head->next);
+        return true;
     }
 
     return true;
 }
+
 
 
 /* Swap every two adjacent nodes */
