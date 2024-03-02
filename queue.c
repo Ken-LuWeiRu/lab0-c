@@ -151,63 +151,112 @@ bool q_delete_mid(struct list_head *head)
 
 /* Delete all nodes that have duplicate string */
 // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
+/* Delete all nodes that have duplicate string */
 bool q_delete_dup(struct list_head *head)
 {
-    if (!head || list_empty(head) || list_is_singular(head)) {
-        return false;
+    if (!head || list_empty(head)) {
+        return false;  // Return false if the list is NULL or empty
     }
 
-    struct list_head *current = head->next, *temp;
-    while (current != head && current->next != head) {
-        element_t *current_entry = list_entry(current, element_t, list);
-        element_t *next_entry = list_entry(current->next, element_t, list);
+    // Step 1: Create a new head containing NULL
+    struct list_head new_head;
+    INIT_LIST_HEAD(&new_head);
 
-        if (strcmp(current_entry->value, next_entry->value) == 0) {
-            temp = current->next;
-            list_del(current->next);
-            free(next_entry->value);
-            free(next_entry);
-            current = temp;
+    // Link the original queue to the new head
+    list_splice_init(head, &new_head);
+
+    // Step 2: Use tmp to remember the content of head->next
+    struct list_head *tmp = new_head.next;
+
+    // Step 3: Iterate over the entire queue to remove duplicates
+    while (tmp != &new_head && tmp->next != &new_head) {
+        struct list_head *current = tmp->next;
+        bool duplicate_found = false;
+
+        // Check if there are any duplicates of the current element
+        while (current->next != &new_head) {
+            element_t *entry1 = list_entry(tmp, element_t, list);
+            element_t *entry2 = list_entry(current->next, element_t, list);
+
+            if (strcmp(entry1->value, entry2->value) == 0) {
+                // Duplicate found, remove the duplicate node
+                struct list_head *temp = current->next;
+                list_del(current->next);
+                free(list_entry(temp, element_t, list)->value);
+                free(list_entry(temp, element_t, list));
+                duplicate_found = true;
+            } else {
+                current = current->next;
+            }
+        }
+
+        // If a duplicate was found, remove the original node as well
+        if (duplicate_found) {
+            struct list_head *temp = tmp->next;
+            list_del(tmp->next);
+            free(list_entry(temp, element_t, list)->value);
+            free(list_entry(temp, element_t, list));
         } else {
-            current = current->next;
+            tmp = tmp->next;
         }
     }
+
     return true;
 }
+
 
 /* Swap every two adjacent nodes */
 // https://leetcode.com/problems/swap-nodes-in-pairs/
 void q_swap(struct list_head *head)
 {
+    // Check if the list is empty or has only one element.
     if (!head || list_empty(head) || list_is_singular(head)) {
         return;
     }
 
-    struct list_head *current = head->next;
+    // Variables to track the current node, adjacent node, and the previous
+    // node.
+    struct list_head *prev = NULL, *cur = head->next, *adj;
 
-    while (current != head && current->next != head) {
-        struct list_head *next = current->next;
-        struct list_head *nextnext = next->next;
-
-        next->next = current;
-        current->next = nextnext;
-        if (nextnext != head) {
-            nextnext->prev = current;
-        }
-
-        if (current == head->next) {
-            head->next = next;
-        }
-
-        current = nextnext;
+    // Update the head if the second node exists.
+    if (head->next->next != head) {
+        head->next = head->next->next;
     }
 
+    // Loop through the list and swap pairs.
+    while (cur != head && cur->next != head) {
+        adj = cur->next;  // The node adjacent to the current node.
 
-    struct list_head *temp = head;
-    do {
-        temp->next->prev = temp;
-        temp = temp->next;
-    } while (temp != head);
+        // If there is a previous node, link it to 'adj'.
+        if (prev) {
+            prev->next = adj;
+        }
+
+        // Swapping pairs: 'cur' and 'adj'.
+        cur->next = adj->next;
+        adj->next = cur;
+
+        // Before moving to the next pair, fix the 'prev' pointers for
+        // bidirectional linkage.
+        if (cur->next != head) {  // Ensure the next node is not the head before
+                                  // accessing 'prev'.
+            cur->next->prev = cur;
+        }
+        adj->prev =
+            prev ? prev
+                 : head;  // 'prev' can be NULL if 'cur' was the first node.
+        cur->prev = adj;
+
+        // Move 'prev' to 'cur' and 'cur' to the next pair's first node.
+        prev = cur;
+        cur = cur->next;
+    }
+
+    // Ensure the last element points back correctly, completing the double
+    // linkage.
+    if (head->prev != head && head->prev->prev != head) {
+        head->prev = prev;
+    }
 }
 
 /* Reverse elements in queue */
