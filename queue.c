@@ -41,9 +41,9 @@ void q_free(struct list_head *head)
 /* Insert an element at head of queue */
 bool q_insert_head(struct list_head *head, char *s)
 {
-    if (!head || !s) {
-        return false;
-    }
+    // if (!head || !s) {
+    //     return false;
+    // }
 
     element_t *new_element = (element_t *) malloc(sizeof(element_t));
     if (new_element == NULL) {
@@ -65,8 +65,8 @@ bool q_insert_head(struct list_head *head, char *s)
 /* Insert an element at tail of queue */
 bool q_insert_tail(struct list_head *head, char *s)
 {
-    if (!head || !s)
-        return false;
+    // if (!head || !s)
+    //     return false;
     element_t *new_element = malloc(sizeof(element_t));
     if (!new_element)
         return false;
@@ -510,24 +510,7 @@ int q_descend(struct list_head *head)
     return remain;  // 返回链表中保留下来的节点数量
 }
 
-// void q_free(struct list_head *head)
-// {
-//     if (!head)
-//         return;
-//     struct list_head *current, *temp;
-//     list_for_each_safe (current, temp, head) {
-//         element_t *entry = list_entry(current, element_t, list);
-//         list_del(current);
-//         free(entry->value);
-//         free(entry);
-//     }
-//     free(head);
-// }
 
-/* Merge two sorted queues */
-// step 1: merge two queues into one queue
-// step 2: sort the merged queue
-// do not using malloc!
 void q_merge_two(struct list_head *head, struct list_head *head2, bool descend)
 {
     if (!head || !head2) {
