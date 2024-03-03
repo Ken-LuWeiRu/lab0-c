@@ -359,77 +359,158 @@ void q_reverseK(struct list_head *head, int k)
 }
 
 
-/* Sort elements of queue in ascending/descending order */
+// // /* Sort elements of queue in ascending/descending order */
+// // // insertion sort
+// void q_sort(struct list_head *head, bool descend)
+// {
+//     if (!head || list_empty(head) || list_is_singular(head)) {
+//         return;
+//     }
+
+//     struct list_head *sorted =
+//         NULL;  // This will be the start of the new sorted list
+//     struct list_head *current = head->next;  // Start from the first element
+
+//     while (current != head) {
+//         struct list_head *next = current->next;  // Store next for later
+
+//         // Remove 'current' from the list
+//         current->prev->next = current->next;
+//         current->next->prev = current->prev;
+
+//         // Find the location to insert the current node in the sorted part
+//         if (sorted == NULL ||
+//             (descend
+//                  ? strcmp(list_entry(sorted, element_t, list)->value,
+//                           list_entry(current, element_t, list)->value) < 0
+//                  : strcmp(list_entry(sorted, element_t, list)->value,
+//                           list_entry(current, element_t, list)->value) > 0))
+//                           {
+//             // Insert at the beginning
+//             current->next = sorted;
+//             if (sorted != NULL) {
+//                 sorted->prev = current;
+//             }
+//             sorted = current;
+//             sorted->prev = NULL;  // Current node is now the first node
+//         } else {
+//             struct list_head *tmp = sorted;
+//             while (
+//                 tmp->next != NULL &&
+//                 (descend
+//                      ? strcmp(list_entry(tmp->next, element_t, list)->value,
+//                               list_entry(current, element_t, list)->value) >
+//                               0
+//                      : strcmp(list_entry(tmp->next, element_t, list)->value,
+//                               list_entry(current, element_t, list)->value) <
+//                            0)) {
+//                 tmp = tmp->next;  // Move to next node
+//             }
+
+//             // Insert 'current' after 'tmp'
+//             current->next = tmp->next;
+//             if (tmp->next != NULL) {
+//                 tmp->next->prev = current;
+//             }
+//             tmp->next = current;
+//             current->prev = tmp;
+//         }
+
+//         current = next;  // Move to the next node
+//     }
+
+//     // Reconnect the sorted list back to head
+//     if (sorted != NULL) {
+//         head->next = sorted;
+//         sorted->prev = head;
+
+//         // Find the last element and connect it back to head
+//         while (sorted->next != NULL) {
+//             sorted = sorted->next;
+//         }
+//         sorted->next = head;
+//         head->prev = sorted;
+//     }
+// }
+
+// Helper function to find the last node of the list.
+struct list_head *get_last(struct list_head *head)
+{
+    struct list_head *temp = head;
+    while (temp->next != head) {
+        temp = temp->next;
+    }
+    return temp;
+}
+
+// Partition function for the quicksort algorithm.
+struct list_head *partition(struct list_head *low,
+                            struct list_head *high,
+                            bool descend)
+{
+    // Set the pivot as the last element's value.
+    char *pivot = list_entry(high, element_t, list)->value;
+    struct list_head *i = low->prev;
+
+    for (struct list_head *j = low; j != high; j = j->next) {
+        if (descend) {
+            if (strcmp(list_entry(j, element_t, list)->value, pivot) > 0) {
+                // Equivalent to i++
+                i = (i == NULL) ? low : i->next;
+
+                // Swap i and j
+                element_t *i_elem = list_entry(i, element_t, list);
+                element_t *j_elem = list_entry(j, element_t, list);
+                char *temp = i_elem->value;
+                i_elem->value = j_elem->value;
+                j_elem->value = temp;
+            }
+        } else {
+            if (strcmp(list_entry(j, element_t, list)->value, pivot) < 0) {
+                // Equivalent to i++
+                i = (i == NULL) ? low : i->next;
+
+                // Swap i and j
+                element_t *i_elem = list_entry(i, element_t, list);
+                element_t *j_elem = list_entry(j, element_t, list);
+                char *temp = i_elem->value;
+                i_elem->value = j_elem->value;
+                j_elem->value = temp;
+            }
+        }
+    }
+
+    // Swap the pivot with the element following i
+    i = (i == NULL) ? low : i->next;  // Equivalent to i++
+    element_t *i_elem = list_entry(i, element_t, list);
+    element_t *high_elem = list_entry(high, element_t, list);
+    char *temp = i_elem->value;
+    i_elem->value = high_elem->value;
+    high_elem->value = temp;
+
+    return i;
+}
+
+// The main function that implements QuickSort for list from low to high
+void _quickSort(struct list_head *low, struct list_head *high, bool descend)
+{
+    if (high != NULL && low != high && low != high->next) {
+        struct list_head *p = partition(low, high, descend);
+        _quickSort(low, p->prev, descend);
+        _quickSort(p->next, high, descend);
+    }
+}
+
+// Function to call the _quickSort
 void q_sort(struct list_head *head, bool descend)
 {
     if (!head || list_empty(head) || list_is_singular(head)) {
         return;
     }
 
-    struct list_head *sorted =
-        NULL;  // This will be the start of the new sorted list
-    struct list_head *current = head->next;  // Start from the first element
-
-    while (current != head) {
-        struct list_head *next = current->next;  // Store next for later
-
-        // Remove 'current' from the list
-        current->prev->next = current->next;
-        current->next->prev = current->prev;
-
-        // Find the location to insert the current node in the sorted part
-        if (sorted == NULL ||
-            (descend
-                 ? strcmp(list_entry(sorted, element_t, list)->value,
-                          list_entry(current, element_t, list)->value) < 0
-                 : strcmp(list_entry(sorted, element_t, list)->value,
-                          list_entry(current, element_t, list)->value) > 0)) {
-            // Insert at the beginning
-            current->next = sorted;
-            if (sorted != NULL) {
-                sorted->prev = current;
-            }
-            sorted = current;
-            sorted->prev = NULL;  // Current node is now the first node
-        } else {
-            struct list_head *tmp = sorted;
-            while (
-                tmp->next != NULL &&
-                (descend
-                     ? strcmp(list_entry(tmp->next, element_t, list)->value,
-                              list_entry(current, element_t, list)->value) > 0
-                     : strcmp(list_entry(tmp->next, element_t, list)->value,
-                              list_entry(current, element_t, list)->value) <
-                           0)) {
-                tmp = tmp->next;  // Move to next node
-            }
-
-            // Insert 'current' after 'tmp'
-            current->next = tmp->next;
-            if (tmp->next != NULL) {
-                tmp->next->prev = current;
-            }
-            tmp->next = current;
-            current->prev = tmp;
-        }
-
-        current = next;  // Move to the next node
-    }
-
-    // Reconnect the sorted list back to head
-    if (sorted != NULL) {
-        head->next = sorted;
-        sorted->prev = head;
-
-        // Find the last element and connect it back to head
-        while (sorted->next != NULL) {
-            sorted = sorted->next;
-        }
-        sorted->next = head;
-        head->prev = sorted;
-    }
+    struct list_head *last = get_last(head);
+    _quickSort(head->next, last, descend);
 }
-
 
 
 /* Remove every node which has a node with a strictly less value anywhere to
