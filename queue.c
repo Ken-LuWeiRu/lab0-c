@@ -369,75 +369,126 @@ void q_reverseK(struct list_head *head, int k)
 
 // /* Sort elements of queue in ascending/descending order */
 // // insertion sort
-void q_sort(struct list_head *head, bool descend)
+// Function prototypes
+void frontBackSplit(struct list_head *source,
+                    struct list_head **frontRef,
+                    struct list_head **backRef);
+struct list_head *sortedMerge(struct list_head *a,
+                              struct list_head *b,
+                              bool descend);
+
+// MergeSort algorithm adapted for list_head structure
+void listMergeSort(struct list_head **headRef, bool descend)
 {
-    if (!head || list_empty(head) || list_is_singular(head)) {
+    struct list_head *head = *headRef;
+    struct list_head *a;
+    struct list_head *b;
+
+    // Base case -- length 0 or 1
+    if ((head == NULL) || (head->next == NULL)) {
         return;
     }
 
-    struct list_head *sorted =
-        NULL;  // This will be the start of the new sorted list
-    struct list_head *current = head->next;  // Start from the first element
+    // Split head into 'a' and 'b' sublists
+    frontBackSplit(head, &a, &b);
 
-    while (current != head) {
-        struct list_head *next = current->next;  // Store next for later
+    // Recursively sort the sublists
+    listMergeSort(&a, descend);
+    listMergeSort(&b, descend);
 
-        // Remove 'current' from the list
-        current->prev->next = current->next;
-        current->next->prev = current->prev;
-
-        // Find the location to insert the current node in the sorted part
-        if (sorted == NULL ||
-            (descend
-                 ? strcmp(list_entry(sorted, element_t, list)->value,
-                          list_entry(current, element_t, list)->value) < 0
-                 : strcmp(list_entry(sorted, element_t, list)->value,
-                          list_entry(current, element_t, list)->value) > 0)) {
-            // Insert at the beginning
-            current->next = sorted;
-            if (sorted != NULL) {
-                sorted->prev = current;
-            }
-            sorted = current;
-            sorted->prev = NULL;  // Current node is now the first node
-        } else {
-            struct list_head *tmp = sorted;
-            while (
-                tmp->next != NULL &&
-                (descend
-                     ? strcmp(list_entry(tmp->next, element_t, list)->value,
-                              list_entry(current, element_t, list)->value) > 0
-                     : strcmp(list_entry(tmp->next, element_t, list)->value,
-                              list_entry(current, element_t, list)->value) <
-                           0)) {
-                tmp = tmp->next;  // Move to next node
-            }
-
-            // Insert 'current' after 'tmp'
-            current->next = tmp->next;
-            if (tmp->next != NULL) {
-                tmp->next->prev = current;
-            }
-            tmp->next = current;
-            current->prev = tmp;
-        }
-
-        current = next;  // Move to the next node
-    }
-
-    // Reconnect the sorted list back to head
-    if (sorted != NULL) {
-        head->next = sorted;
-        sorted->prev = head;
-
-        // Find the last element and connect it back to head
-        while (sorted->next != NULL) {
-            sorted = sorted->next;
-        }
-        sorted->next = head;
-        head->prev = sorted;
-    }
+    // Merge the two sorted lists together
+    *headRef = sortedMerge(a, b, descend);
 }
+
+// Utility function to split the nodes of the given list into front and back
+// halves
+void frontBackSplit(struct list_head *source,
+                    struct list_head **frontRef,
+                    struct list_head **backRef)
+{
+    struct list_head *fast;
+    struct list_head *slow;
+    slow = source;
+    fast = source->next;
+
+    // Advance 'fast' two nodes, and advance 'slow' one node
+    while (fast != NULL) {
+        fast = fast->next;
+        if (fast != NULL) {
+            slow = slow->next;
+            fast = fast->next;
+        }
+    }
+
+    // 'slow' is before the midpoint in the list, so split it in two at that
+    // point.
+    *frontRef = source;
+    *backRef = slow->next;
+    slow->next = NULL;
+}
+
+// Utility function to merge two sorted lists
+struct list_head *sortedMerge(struct list_head *a,
+                              struct list_head *b,
+                              bool descend)
+{
+    struct list_head *result = NULL;
+
+    // Base cases
+    if (a == NULL)
+        return b;
+    else if (b == NULL)
+        return a;
+
+    // Pick either a or b, and recur
+    if (descend ? (strcmp(list_entry(a, element_t, list)->value,
+                          list_entry(b, element_t, list)->value) > 0)
+                : (strcmp(list_entry(a, element_t, list)->value,
+                          list_entry(b, element_t, list)->value) <= 0)) {
+        result = a;
+        result->next = sortedMerge(a->next, b, descend);
+    } else {
+        result = b;
+        result->next = sortedMerge(a, b->next, descend);
+    }
+    return result;
+}
+
+// The function to sort the linked list
+// The function to sort the linked list
+void q_sort(struct list_head *head, bool descend)
+{
+    if (!head || list_empty(head) || list_is_singular(head)) {
+        return;  // The list is empty or has only one element.
+    }
+
+    // Detach the list from the dummy head to handle it separately.
+    head->prev->next = NULL;  // Break the list from the dummy head.
+    head->next->prev =
+        NULL;  // Break the reverse link from the first actual element.
+
+    struct list_head *tempHead = head->next;  // Actual start of the list.
+
+    // Perform merge sort, note that this should be adapted to handle your list
+    // structure.
+    listMergeSort(&tempHead, descend);
+
+    // Find the new last element after sorting
+    struct list_head *new_last = tempHead;
+    while (new_last->next != NULL) {
+        new_last = new_last->next;
+    }
+
+    // Reattach the sorted list to the dummy head.
+    head->next = tempHead;
+    tempHead->prev = head;  // Reattach the start of the list to the dummy head.
+    new_last->next =
+        head;  // Close the circular list by linking last element to dummy head.
+    head->prev = new_last;  // Ensure the list is doubly circular by linking
+                            // dummy head back to the last element.
+}
+
+
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
@@ -524,8 +575,47 @@ void q_merge_two(struct list_head *head, struct list_head *head2, bool descend)
         return;  // Error case
     }
 
-    list_splice_tail(head2, head);  // Merge the two queues
-    INIT_LIST_HEAD(head2);
+    struct list_head temp;  // Temporary list head for merged list
+    INIT_LIST_HEAD(&temp);  // Initialize temporary list
+
+    struct list_head *node1 = head->next;
+    struct list_head *node2 = head2->next;
+
+    while (node1 != head && node2 != head2) {
+        element_t *entry1 = list_entry(node1, element_t, list);
+        element_t *entry2 = list_entry(node2, element_t, list);
+
+        // Determine which element to move to the temporary list
+        if ((descend && (strcmp(entry1->value, entry2->value) > 0)) ||
+            (!descend && (strcmp(entry1->value, entry2->value) < 0))) {
+            node1 = node1->next;      // Move to the next node in the first list
+            list_del(&entry1->list);  // Detach from current list
+            list_add_tail(&entry1->list, &temp);  // Add to the merged list
+        } else {
+            node2 = node2->next;  // Move to the next node in the second list
+            list_del(&entry2->list);              // Detach from current list
+            list_add_tail(&entry2->list, &temp);  // Add to the merged list
+        }
+    }
+
+    // Append any remaining elements from the non-empty list to the merged list
+    while (node1 != head) {
+        struct list_head *next = node1->next;
+        list_del(node1);
+        list_add_tail(node1, &temp);
+        node1 = next;
+    }
+    while (node2 != head2) {
+        struct list_head *next = node2->next;
+        list_del(node2);
+        list_add_tail(node2, &temp);
+        node2 = next;
+    }
+
+    // Now, splice the sorted temporary list into the original list head
+    list_splice(&temp, head);
+    INIT_LIST_HEAD(
+        head2);  // Clear the second list head as it should now be empty
 }
 
 
