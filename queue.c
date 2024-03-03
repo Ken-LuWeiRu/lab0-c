@@ -368,7 +368,6 @@ void q_reverseK(struct list_head *head, int k)
 
 
 // /* Sort elements of queue in ascending/descending order */
-// // insertion sort
 // Function prototypes
 void frontBackSplit(struct list_head *source,
                     struct list_head **frontRef,
@@ -432,27 +431,39 @@ struct list_head *sortedMerge(struct list_head *a,
                               struct list_head *b,
                               bool descend)
 {
-    struct list_head *result = NULL;
+    struct list_head dummy;  // Temporary dummy node to start the merged list
+    struct list_head *tail = &dummy;  // Point to the last node of the new list
+    dummy.next = NULL;
 
-    // Base cases
-    if (a == NULL)
-        return b;
-    else if (b == NULL)
-        return a;
-
-    // Pick either a or b, and recur
-    if (descend ? (strcmp(list_entry(a, element_t, list)->value,
-                          list_entry(b, element_t, list)->value) > 0)
-                : (strcmp(list_entry(a, element_t, list)->value,
-                          list_entry(b, element_t, list)->value) <= 0)) {
-        result = a;
-        result->next = sortedMerge(a->next, b, descend);
-    } else {
-        result = b;
-        result->next = sortedMerge(a, b->next, descend);
+    while (a != NULL && b != NULL) {
+        if (descend ? (strcmp(list_entry(a, element_t, list)->value,
+                              list_entry(b, element_t, list)->value) > 0)
+                    : (strcmp(list_entry(a, element_t, list)->value,
+                              list_entry(b, element_t, list)->value) <= 0)) {
+            tail->next = a;
+            a->prev = tail;  // Set the previous pointer for doubly linked list
+            a = a->next;
+        } else {
+            tail->next = b;
+            b->prev = tail;  // Set the previous pointer for doubly linked list
+            b = b->next;
+        }
+        tail = tail->next;
     }
-    return result;
+
+    // Attach the remaining elements
+    tail->next = (a == NULL) ? b : a;
+
+    // Fix the back links for the rest of the list
+    while (tail->next != NULL) {
+        tail->next->prev = tail;
+        tail = tail->next;
+    }
+
+    return dummy
+        .next;  // Return the next node of the dummy, which is the new head
 }
+
 
 // The function to sort the linked list
 // The function to sort the linked list
@@ -462,10 +473,21 @@ void q_sort(struct list_head *head, bool descend)
         return;  // The list is empty or has only one element.
     }
 
+    // head->prev->next = NULL;
+    // head->prev= NULL;
+
+    // listMergeSort(&head, descend);
+
+    // struct list_head *new_last = head;
+    // while (new_last->next != NULL) {
+    //     new_last = new_last->next;
+    // }
+
+    // head->prev = new_last;
+
     // Detach the list from the dummy head to handle it separately.
-    head->prev->next = NULL;  // Break the list from the dummy head.
-    head->next->prev =
-        NULL;  // Break the reverse link from the first actual element.
+    head->next->prev = NULL;
+    head->prev->next = NULL;
 
     struct list_head *tempHead = head->next;  // Actual start of the list.
 
