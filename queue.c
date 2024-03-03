@@ -151,39 +151,57 @@ bool q_delete_mid(struct list_head *head)
 
 /* Delete all nodes that have duplicate string */
 // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
+/* Delete all nodes that have duplicate string */
+// because it is sored list, so we compare cuurent value with previous value
+// until we find the different value, then we can delete the duplicate value
+// because the duplicate point all have to remove, we need a flag to know
+// wheather previous value need to remove
 bool q_delete_dup(struct list_head *head)
 {
-    if (!head || list_empty(head) || head->next == head) {
-        return false;
+    if (!head || list_empty(head)) {
+        return false;  // Return false if the list is empty or head is NULL.
     }
 
     bool flag = false;
-    struct list_head *current = head->next, *temp;
-    element_t *first_element = list_entry(current, element_t, list);
-
-    while (current->next != head) {
-        element_t *current_element = list_entry(current->next, element_t, list);
-
-
-        if (strcmp(first_element->value, current_element->value) == 0) {
-            temp = current->next;
-            list_del(current);
-            current = temp;
+    bool flag_gobal = false;
+    struct list_head *current = head->next->next, *pre = head->next;
+    while (current != head) {
+        element_t *current_element = list_entry(current, element_t, list);
+        element_t *pre_element = list_entry(pre, element_t, list);
+        if (strcmp(current_element->value, pre_element->value) == 0) {
+            list_del(pre);
+            free(pre_element->value);
+            free(pre_element);
             flag = true;
-        } else {
-            current = current->next;
+            flag_gobal = true;
+        } else if (flag) {
+            list_del(pre);
+            free(pre_element->value);
+            free(pre_element);
+            flag = false;
         }
     }
-
-    if (flag) {
-        list_del(head->next);
-        return true;
-    }
-
-    return true;
+    return flag_gobal;
 }
 
+// void q_free(struct list_head *head)
+// {
+//     if (!head)
+//         return;
+//     struct list_head *current, *temp;
+//     list_for_each_safe (current, temp, head) {
+//         element_t *entry = list_entry(current, element_t, list);
+//         list_del(current);
+//         free(entry->value);
+//         free(entry);
+//     }
+//     free(head);
+// }
 
+// element_t *entry = list_entry(current, element_t, list);
+// list_del(current);
+// free(entry->value);
+// free(entry);
 
 /* Swap every two adjacent nodes */
 // https://leetcode.com/problems/swap-nodes-in-pairs/
