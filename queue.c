@@ -228,57 +228,7 @@ bool q_delete_dup(struct list_head *head)
 
 /* Swap every two adjacent nodes */
 // https://leetcode.com/problems/swap-nodes-in-pairs/
-void q_swap(struct list_head *head)
-{
-    // Check if the list is empty or has only one element.
-    if (!head || list_empty(head) || list_is_singular(head)) {
-        return;
-    }
-
-    // Variables to track the current node, adjacent node, and the previous
-    // node.
-    struct list_head *prev = NULL, *cur = head->next, *adj;
-
-    // Update the head if the second node exists.
-    if (head->next->next != head) {
-        head->next = head->next->next;
-    }
-
-    // Loop through the list and swap pairs.
-    while (cur != head && cur->next != head) {
-        adj = cur->next;  // The node adjacent to the current node.
-
-        // If there is a previous node, link it to 'adj'.
-        if (prev) {
-            prev->next = adj;
-        }
-
-        // Swapping pairs: 'cur' and 'adj'.
-        cur->next = adj->next;
-        adj->next = cur;
-
-        // Before moving to the next pair, fix the 'prev' pointers for
-        // bidirectional linkage.
-        if (cur->next != head) {  // Ensure the next node is not the head before
-                                  // accessing 'prev'.
-            cur->next->prev = cur;
-        }
-        adj->prev =
-            prev ? prev
-                 : head;  // 'prev' can be NULL if 'cur' was the first node.
-        cur->prev = adj;
-
-        // Move 'prev' to 'cur' and 'cur' to the next pair's first node.
-        prev = cur;
-        cur = cur->next;
-    }
-
-    // Ensure the last element points back correctly, completing the double
-    // linkage.
-    if (head->prev != head && head->prev->prev != head) {
-        head->prev = prev;
-    }
-}
+void q_swap(struct list_head *head) {}
 
 /* Reverse elements in queue */
 // pass
@@ -312,34 +262,94 @@ void q_reverse(struct list_head *head)
 
 /* Reverse the nodes of the list k at a time */
 // https://leetcode.com/problems/reverse-nodes-in-k-group/
+// i am goint to modify below code into our form
+// struct ListNode* reverseKGroup(struct ListNode* head, int k) {
+//     struct ListNode *curr = head;
+//     int count = 0;
+
+//     // First count k nodes
+//     while (curr != NULL && count != k) {
+//         curr = curr->next;
+//         count++;
+//     }
+
+//     // If we counted k nodes, proceed with reversing them
+//     if (count == k) {
+//         // Reverse next k nodes and get the new head
+//         curr = reverseKGroup(curr, k);
+
+//         // Now head points to the kth node. So, reverse current k-group.
+//         while (count > 0) {
+//             struct ListNode *tmp = head->next; // temporary store for the
+//             next node head->next = curr; // point the next of the current
+//             node to the new head after reversal curr = head; // move the
+//             current head to the next node in the original list head = tmp; //
+//             move head to the next node in the original list count--;
+//         }
+//         head = curr; // reset head to the new reversed head after the entire
+//         k-group is reversed
+//     }
+//     return head; // return the head of the modified list
+// }
 void q_reverseK(struct list_head *head, int k)
 {
-    if (!head || list_empty(head) || list_is_singular(head)) {
-        return;
+    if (head == NULL || list_empty(head) || k < 2) {
+        return;  // No need to reverse if the list is empty, k is less than 2,
+                 // or head is NULL.
     }
 
-    struct list_head *current = head->next;
-    struct list_head *start = current;
-    int count = 0;
+    struct list_head *group_prev =
+        head;  // The node before the start of the group to be reversed
+    struct list_head *group_first =
+        head->next;  // The first node of the current group
 
-    while (current != head && count < k) {
-        current = current->next;
-        count++;
-    }
+    while (group_first != head) {
+        struct list_head *current = group_first;
+        struct list_head *group_end = current;
+        int count = 1;
 
-    if (count == k) {
-        struct list_head *prev = head, *next = NULL;
-        current = start;
+        // Find the end of the current group or end of the list
+        while (count < k && group_end->next != head) {
+            group_end = group_end->next;
+            count++;
+        }
 
-        for (int i = 0; i < k; i++) {
-            next = current->next;
-            list_del_init(current);
-            list_add(current, prev->next);
-            prev = current;
-            current = next;
+        // Only reverse if we have k elements
+        if (count == k) {
+            struct list_head *next_group_first =
+                group_end->next;  // The first node of the next group
+
+            // Reverse the group
+            struct list_head *prev = next_group_first;
+            while (current != next_group_first) {
+                struct list_head *next = current->next;
+                current->next = prev;
+                if (prev != head) {  // Avoid invalid memory access
+                    prev->prev = current;
+                }
+                prev = current;
+                current = next;
+            }
+
+            // Reattach the reversed group back to the list
+            group_first->next = next_group_first;
+            if (next_group_first != head) {  // Check for end of list
+                next_group_first->prev = group_first;
+            }
+            group_prev->next = group_end;
+            group_end->prev = group_prev;
+
+            // Prepare for the next group
+            group_prev = group_first;
+            group_first = next_group_first;
+        } else {
+            // Not enough elements left to form a full group, so break out of
+            // the loop
+            break;
         }
     }
 }
+
 
 /* Sort elements of queue in ascending/descending order */
 void q_sort(struct list_head *head, bool descend)
