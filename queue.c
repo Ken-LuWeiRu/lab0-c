@@ -207,25 +207,6 @@ bool q_delete_dup(struct list_head *head)
 }
 
 
-// void q_free(struct list_head *head)
-// {
-//     if (!head)
-//         return;
-//     struct list_head *current, *temp;
-//     list_for_each_safe (current, temp, head) {
-//         element_t *entry = list_entry(current, element_t, list);
-//         list_del(current);
-//         free(entry->value);
-//         free(entry);
-//     }
-//     free(head);
-// }
-
-// element_t *entry = list_entry(current, element_t, list);
-// list_del(current);
-// free(entry->value);
-// free(entry);
-
 /* Swap every two adjacent nodes */
 // https://leetcode.com/problems/swap-nodes-in-pairs/
 void q_swap(struct list_head *head)
@@ -455,71 +436,93 @@ void q_sort(struct list_head *head, bool descend)
  * the right side of it */
 // https://leetcode.com/problems/remove-nodes-from-linked-list/
 // LeetCode 2487. Remove Nodes From Linked List
+// step 1: know the length of queue
+// step 2: two pointer, cur and next, if  cur_val < value_next, then delete cur
+// step 3: return the length of queue
+
 int q_ascend(struct list_head *head)
 {
-    struct list_head *temp, *safe;
-
-    if (!head || list_empty(head))
+    if (!head || list_empty(head) || list_is_singular(head))
         return 0;
 
-    list_for_each_safe (temp, safe, head) {
-        element_t *current_element = list_entry(temp, element_t, list);
-        if (temp->next != head) {
-            element_t *next_element = list_entry(temp->next, element_t, list);
-            if (current_element->value < next_element->value) {
-                list_del(temp);
-                free(current_element->value);
-                free(current_element);
-            }
+    struct list_head *current = head->prev;  // 从链表末尾开始
+    // 初始化一个临时变量来跟踪目前为止遇到的最小值
+    char *min_value = list_entry(current, element_t, list)->value;
+    int remain = 1;  // 用于记录保留下来的节点数量，末尾节点总是保留
+
+    current = current->prev;  // 从倒数第二个节点开始检查
+
+    while (current != head) {                    // 遍历直到回到头部
+        struct list_head *prev = current->prev;  // 保存前一个节点以便后续遍历
+        element_t *curr_elem = list_entry(current, element_t, list);
+
+        // 如果当前节点的值大于目前为止遇到的最小值，则删除当前节点
+        if (strcmp(curr_elem->value, min_value) > 0) {
+            list_del(current);  // 从链表中删除当前节点
+            // 释放节点占用的资源
+            free(curr_elem->value);  // 释放字符串资源
+            free(curr_elem);         // 释放节点资源
+        } else {
+            // 更新目前为止遇到的最小值并增加保留节点计数
+            min_value = curr_elem->value;
+            remain++;
         }
+
+        current = prev;  // 移动到链表中的前一个节点
     }
-    return 0;
+
+    return remain;  // 返回链表中保留下来的节点数量
 }
+
 
 /* Remove every node which has a node with a strictly greater value anywhere to
  * the right side of it */
+// Plan 1: use two while loop to iterate every node
 int q_descend(struct list_head *head)
 {
-    if (!head || list_empty(head))
+    if (!head || list_empty(head) || list_is_singular(head))
         return 0;
 
-    struct list_head *current = head, *temp;
-    int removed = 0;
+    struct list_head *current = head->prev;  // 从链表末尾开始
+    // 初始化一个临时变量来跟踪目前为止遇到的最大值
+    char *max_value = list_entry(current, element_t, list)->value;
+    int remain = 0;  // 用于记录保留下来的节点数量
 
-    struct list_head new_head;
-    INIT_LIST_HEAD(&new_head);
+    while (current != head) {                    // 遍历直到回到头部
+        struct list_head *prev = current->prev;  // 保存前一个节点以便后续遍历
+        element_t *curr_elem = list_entry(current, element_t, list);
 
-    char *max_value = NULL;
-    element_t *current_entry;
-
-    while (current->next != head) {
-        current = current->next;
-        current_entry = list_entry(current, element_t, list);
-
-
-        if (!max_value || strcmp(current_entry->value, max_value) >= 0) {
-            max_value = current_entry->value;
-            list_move_tail(current, &new_head);
+        // 如果当前节点的值小于目前为止遇到的最大值，则删除当前节点
+        if (strcmp(curr_elem->value, max_value) < 0) {
+            list_del(current);  // 从链表中删除当前节点
+            // 释放节点占用的资源
+            free(curr_elem->value);  // 释放字符串资源
+            free(curr_elem);         // 释放节点资源
         } else {
-            temp = current->prev;
-            list_del(current);
-            free(current_entry->value);
-            free(current_entry);
-            current = temp;
-            removed++;
+            // 更新目前为止遇到的最大值并增加保留节点计数
+            max_value = curr_elem->value;
+            remain++;
         }
+
+        current = prev;  // 移动到链表中的前一个节点
     }
 
-    if (!list_empty(&new_head)) {
-        head->next = new_head.next;
-        new_head.next->prev = head;
-        head->prev = new_head.prev;
-        new_head.prev->next = head;
-    }
-
-    return removed;
+    return remain;  // 返回链表中保留下来的节点数量
 }
 
+// void q_free(struct list_head *head)
+// {
+//     if (!head)
+//         return;
+//     struct list_head *current, *temp;
+//     list_for_each_safe (current, temp, head) {
+//         element_t *entry = list_entry(current, element_t, list);
+//         list_del(current);
+//         free(entry->value);
+//         free(entry);
+//     }
+//     free(head);
+// }
 
 /* Merge two sorted queues */
 // step 1: merge two queues into one queue
