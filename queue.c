@@ -162,27 +162,50 @@ bool q_delete_dup(struct list_head *head)
         return false;  // Return false if the list is empty or head is NULL.
     }
 
-    bool flag = false;
-    bool flag_gobal = false;
-    struct list_head *current = head->next->next, *pre = head->next;
-    while (current != head) {
+    struct list_head *current = head->next, *next_node;
+    bool global_deleted = false;
+    bool duplicate_flag = false;
+
+    while (current != head && current->next != head) {
         element_t *current_element = list_entry(current, element_t, list);
-        element_t *pre_element = list_entry(pre, element_t, list);
-        if (strcmp(current_element->value, pre_element->value) == 0) {
-            list_del(pre);
-            free(pre_element->value);
-            free(pre_element);
-            flag = true;
-            flag_gobal = true;
-        } else if (flag) {
-            list_del(pre);
-            free(pre_element->value);
-            free(pre_element);
-            flag = false;
+        next_node = current->next;  // Move to the next node early because
+                                    // current might get deleted.
+        element_t *next_element = list_entry(next_node, element_t, list);
+
+        // Check if current and next nodes have the same value.
+        if (strcmp(current_element->value, next_element->value) == 0) {
+            duplicate_flag = true;
+            global_deleted = true;
         }
+
+        // Move ahead to find the end of duplicates if there are any.
+        while (duplicate_flag && next_node != head &&
+               strcmp(current_element->value, next_element->value) == 0) {
+            struct list_head *temp = next_node->next;
+            list_del(next_node);
+            free(next_element->value);
+            free(next_element);
+            next_node = temp;  // Proceed to next node.
+            next_element = next_node != head
+                               ? list_entry(next_node, element_t, list)
+                               : NULL;
+        }
+
+        // If duplicates were found, delete the current node as well.
+        if (duplicate_flag) {
+            list_del(current);
+            free(current_element->value);
+            free(current_element);
+            duplicate_flag = false;  // Reset the flag for the next iteration.
+        }
+
+        current =
+            next_node;  // Proceed to next node for the next loop iteration.
     }
-    return flag_gobal;
+
+    return global_deleted;  // Return true if any element was deleted.
 }
+
 
 // void q_free(struct list_head *head)
 // {
