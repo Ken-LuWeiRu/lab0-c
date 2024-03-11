@@ -41,10 +41,6 @@ void q_free(struct list_head *head)
 /* Insert an element at head of queue */
 bool q_insert_head(struct list_head *head, char *s)
 {
-    // if (!head || !s) { // Check if either head or s is NULL.
-    //     return false;
-    // }
-
     element_t *new_element = malloc(sizeof(element_t));
     if (!new_element) {
         return false;  // Memory allocation failed for new_element.
@@ -52,8 +48,7 @@ bool q_insert_head(struct list_head *head, char *s)
 
     new_element->value = strdup(s);  // Duplicate the string.
     if (!new_element->value) {
-        free(new_element);  // Free the allocated memory for new_element since
-                            // strdup failed.
+        free(new_element);
         return false;
     }
 
@@ -66,22 +61,16 @@ bool q_insert_head(struct list_head *head, char *s)
 /* Insert an element at tail of queue */
 bool q_insert_tail(struct list_head *head, char *s)
 {
-    // if (!head || !s) { // Check if either head or s is NULL.
-    //     return false;
-    // }
-
     element_t *new_element = malloc(sizeof(element_t));
     if (!new_element) {
         return false;  // Memory allocation failed.
     }
-
     new_element->value = strdup(s);
     if (!new_element->value) {
         free(new_element);  // Avoid memory leak by freeing the new element if
                             // strdup fails.
         return false;
     }
-
     list_add_tail(&new_element->list,
                   head);  // Add the new element to the tail of the list.
     return true;
@@ -473,17 +462,6 @@ void q_sort(struct list_head *head, bool descend)
         return;  // The list is empty or has only one element.
     }
 
-    // head->prev->next = NULL;
-    // head->prev= NULL;
-
-    // listMergeSort(&head, descend);
-
-    // struct list_head *new_last = head;
-    // while (new_last->next != NULL) {
-    //     new_last = new_last->next;
-    // }
-
-    // head->prev = new_last;
 
     // Detach the list from the dummy head to handle it separately.
     head->next->prev = NULL;
